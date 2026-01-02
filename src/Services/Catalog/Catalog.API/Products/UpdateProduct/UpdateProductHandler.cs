@@ -5,11 +5,25 @@ namespace Catalog.API.Products.UpdateProduct
         , string Description, string ImageFile, decimal Price) : ICommand<UpdateProductResult>;
 
     public record UpdateProductResult(bool IsSuccess);
+
+    public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
+    {
+        public UpdateProductCommandValidator()
+        {
+            RuleFor(x => x.Id).NotEmpty().WithMessage("Product Id is required");
+
+            RuleFor(x => x.Name).NotEmpty().WithMessage("Name is required")
+                .Length(2,150).WithMessage("Name mmust be minimum 2 and maximum 150 characters");
+
+            RuleFor(x => x.Price).GreaterThan(0).WithMessage("Price must be greater than 0");
+        }
+    }
+
     internal class UpdateProductCommandHandler(IDocumentSession session, ILogger<UpdateProductCommandHandler> logger) : ICommandHandler<UpdateProductCommand, UpdateProductResult>
     {
         public async Task<UpdateProductResult> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
         {
-            logger.LogInformation("UpdateProductHandler.Handle called with {@Command},command");
+            logger.LogInformation("UpdateProductHandler.Handle called with {@Command}",command);
 
             var product = await session.LoadAsync<Product>(command.Id, cancellationToken);
 
