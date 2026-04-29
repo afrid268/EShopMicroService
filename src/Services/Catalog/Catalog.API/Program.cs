@@ -1,4 +1,6 @@
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +33,12 @@ builder.Services.AddMarten(opt =>
 if (builder.Environment.IsDevelopment())
     builder.Services.InitializeMartenWith<CatalogInitialData>();
 
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
+//health check config
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -60,5 +68,10 @@ app.UseExceptionHandler(exceptionHandlerApp =>
         await context.Response.WriteAsJsonAsync(probelmDetail);
     });
 });
+
+app.UseHealthChecks("/health", 
+    new HealthCheckOptions{
+        ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+    });
 
 app.Run();
